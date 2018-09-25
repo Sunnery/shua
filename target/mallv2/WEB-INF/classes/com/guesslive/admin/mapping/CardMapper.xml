@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.CardMapper">
+
+	<select id="searchAll" resultType="Card">
+		select t.id,
+		t.name,cardid,t.type,discount,leastcost,reducecost,imgurl,imgurlWeixin,starttime,endtime,t.program,t.section,t.status,t.quantity,t1.name
+		brandname,cardLogo,iconurl
+		from t_card_weixin t,t_card_group t1
+		<where>
+			and t.brandname = t1.id and t.status = 1
+			<if test="card.cardid != '' and card.cardid != null">
+				and cardid=#{card.cardid}
+			</if>
+			<if test="card.name != '' and card.name != null">
+				and t.name like '%${card.name}%'
+			</if>
+			<if test="card.type != '' and card.type != null">
+				and t.type=#{card.type}
+			</if>
+			<if test="card.starttime != '' and card.starttime != null">
+				and starttime=#{card.starttime}
+			</if>
+			<if test="card.endtime != '' and card.endtime != null">
+				and endtime=#{card.endtime}
+			</if>
+		</where>
+		order by endtime DESC
+		limit #{start},#{rows}
+	</select>
+
+	<select id="searchTotal" resultType="int">
+		select count(*) from t_card_weixin
+		<where>
+			<if test="cardid != '' and cardid != null">
+				and cardid=#{cardid}
+			</if>
+			<if test="name != '' and name != null">
+				and name like '%${name}%'
+			</if>
+			<if test="type != '' and type != null">
+				and type=#{type}
+			</if>
+			<if test="starttime != '' and starttime != null">
+				and starttime=#{starttime}
+			</if>
+			<if test="endtime != '' and endtime != null">
+				and endtime=#{endtime}
+			</if>
+		</where>
+	</select>
+
+	<!-- 获取卡券活动组 -->
+	<select id="getCardGroupList" resultType="CardGroup">
+		SELECT id,name,status,type FROM t_card_group WHERE status = 1 order by
+		id DESC
+		<if test="rows != 0">
+			limit #{start},#{rows}
+		</if>
+	</select>
+
+	<!-- 根据类型获取活动组 -->
+	<select id="getCardGroupListByType" resultType="CardGroup">
+		SELECT
+		id,name,status,type FROM t_card_group WHERE status = 1
+		AND type =
+		#{type}
+	</select>
+
+	<select id="searchGroupTotal" resultType="int">
+		select count(*) from
+		t_card_group WHERE status = 1
+	</select>
+
+	<insert id="saveToCardGoods" parameterType="CardGoods">
+		<foreach collection="list" item="item" separator=";">
+			insert into
+			t_card_goods (cardid,goodsid,type)
+			values(#{item.cardid},#{item.goodsid},1)
+		</foreach>
+	</insert>
+
+	<select id="searchByCardId" resultType="CardGoods">
+		SELECT * FROM
+		t_card_goods c LEFT JOIN
+
+		(select g.goodsid, g.goodsname, g.goodssn,
+		g.preimgurls, g.saleprice from
+		t_goods g LEFT JOIN t_agent a ON
+		g.agentid=a.id WHERE a.`status`>0) ga
+
+		ON c.goodsid=ga.goodsid where
+		c.cardid=#{cardGoods.cardid} limit
+		#{start},#{rows}
+	</select>
+
+	<select id="searchCardCount" resultType="int">
+		select count(*) from
+		t_card_goods c LEFT JOIN t_goods g ON
+		c.goodsid=g.goodsid
+		where
+		cardid=#{cardid}
+	</select>
+
+	<select id="searchIsCard" resultType="CardGoods">
+		SELECT g.goodsid, g.goodsname, g.goodssn, g.preimgurls, g.saleprice
+		FROM t_goods g LEFT JOIN t_agent a on a.id = g.agentid
+		LEFT JOIN
+		t_brand b on g.brandid = b.id
+		WHERE
+		g.activitytype=#{cardGoods.activitytype} AND a.`status`>0 AND
+
+		g.goodsid NOT IN (SELECT cg.goodsid FROM t_card_goods cg WHERE
+		cg.cardid = #{cardGoods.cardid})
+		<if test="cardGoods.goodssn != null and cardGoods.goodssn  != ''">
+			and goodssn like concat('%',#{cardGoods.goodssn },'%')
+		</if>
+		<if test="cardGoods.goodsname != null and cardGoods.goodsname  != ''">
+			and goodsname like concat('%',#{cardGoods.goodsname },'%')
+		</if>
+		<if test="cardGoods.agentname != null and cardGoods.agentname  != ''">
+			and a.agentname LIKE concat('%',#{cardGoods.agentname
+			},'%')
+		</if>
+		<if test="cardGoods.brandname != null and cardGoods.brandname  != ''">
+			and b.brandname LIKE concat('%',#{cardGoods.brandname
+			},'%')
+		</if>
+		limit #{start},#{rows}
+	</select>
+
+	<select id="searchCardAll" resultType="int">
+		select count(*) from
+		t_goods g LEFT JOIN t_agent a on a.id = g.agentid
+		WHERE
+		g.activitytype=#{activitytype} AND a.`status`>0 AND
+		g.goodsid NOT IN
+		(SELECT cg.goodsid FROM t_card_goods cg WHERE cg.cardid =
+		#{cardid})
+	</select>
+
+
+	<delete id="deleteCardGoods" parameterType="CardGoods">
+		delete from
+		t_card_goods where goodsid=#{goodsid}
+	</delete>
+
+	<insert id="save" useGeneratedKeys="true" keyProperty="id">
+		insert into t_card_weixin
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="name != null">
+				name,
+			</if>
+			<if test="cardid != null">
+				cardid,
+			</if>
+			<if test="type != null">
+				type,
+			</if>
+			<if test="discount != null">
+				discount,
+			</if>
+			<if test="leastcost != null">
+				leastcost,
+			</if>
+			<if test="reducecost != null">
+				reducecost,
+			</if>
+			<if test="imgurl != null ">
+				imgurl,
+			</if>
+			<if test="starttime != null ">
+				starttime,
+			</if>
+			<if test="endtime != null ">
+				endtime,
+			</if>
+			<if test="subtitle != null ">
+				subtitle,
+			</if>
+			<if test="quantity != null ">
+				quantity,
+			</if>
+			<if test="num != null ">
+				num,
+			</if>
+			<if test="imgurlWeixin != null ">
+				imgurlWeixin,
+			</if>
+			<if test="synWeixin != null ">
+				synWeixin,
+			</if>
+			<if test="weixinCardId != null ">
+				weixinCardId,
+			</if>
+			<if test="consumeType != null ">
+				consumeType,
+			</if>
+			<if test="program != null ">
+				program,
+			</if>
+			<if test="section != null ">
+				section,
+			</if>
+			<if test="brandname != null ">
+				brandname,
+			</if>
+			<if test="cardLogo != null ">
+				cardLogo,
+			</if>
+			<if test="validTimeType != null ">
+				validTimeType,
+			</if>
+			<if test="fixedTerm != null ">
+				fixedTerm,
+			</if>
+			<if test="fixedBeginTerm != null ">
+				fixedBeginTerm,
+			</if>
+			<if test="iconurl != null ">
+				iconurl,
+			</if>
+			createtime
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="name != null">
+				#{name},
+			</if>
+			<if test="cardid != null">
+				#{cardid},
+			</if>
+			<if test="type != null">
+				#{type},
+			</if>
+			<if test="discount != null">
+				#{discount},
+			</if>
+			<if test="leastcost != null">
+				#{leastcost},
+			</if>
+			<if test="reducecost != null">
+				#{reducecost},
+			</if>
+			<if test="imgurl != null ">
+				#{imgurl},
+			</if>
+			<if test="starttime != null ">
+				#{starttime},
+			</if>
+			<if test="endtime != null ">
+				#{endtime},
+			</if>
+			<if test="subtitle != null ">
+				#{subtitle},
+			</if>
+			<if test="quantity != null ">
+				#{quantity},
+			</if>
+			<if test="num != null ">
+				#{num},
+			</if>
+			<if test="imgurlWeixin != null ">
+				#{imgurlWeixin},
+			</if>
+			<if test="synWeixin != null ">
+				#{synWeixin},
+			</if>
+			<if test="weixinCardId != null ">
+				#{weixinCardId},
+			</if>
+			<if test="consumeType != null ">
+				#{consumeType},
+			</if>
+			<if test="program != null ">
+				#{program},
+			</if>
+			<if test="section != null ">
+				#{section},
+			</if>
+			<if test="brandname != null ">
+				#{brandname},
+			</if>
+			<if test="cardLogo != null ">
+				#{cardLogo},
+			</if>
+			<if test="validTimeType != null ">
+				#{validTimeType},
+			</if>
+			<if test="fixedTerm != null ">
+				#{fixedTerm},
+			</if>
+			<if test="fixedBeginTerm != null ">
+				#{fixedBeginTerm},
+			</if>
+			<if test="iconurl != null ">
+				#{iconurl},
+			</if>
+			now()
+		</trim>
+	</insert>
+
+	<insert id="addCardGroup" useGeneratedKeys="true" keyProperty="id">
+		insert into t_card_group
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="name != null">
+				name,
+			</if>
+			<if test="type != null">
+				type
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="name != null">
+				#{name},
+			</if>
+			<if test="type != null">
+				#{type}
+			</if>
+		</trim>
+	</insert>
+
+	<!-- 根据商品id查询卡劵集合 -->
+	<select id="selectByGoods" resultType="Card" parameterType="int">
+		SELECT c.* FROM t_card_weixin c LEFT JOIN t_card_goods cg on c.id=cg.cardid
+		WHERE cg.goodsid=#{goodsid}
+	</select>
+
+	<!-- 更新活动组的状态 -->
+	<update id="updateCardGroupById" parameterType="CardGroup">
+		UPDATE
+		t_card_group SET status = 0 WHERE id = #{id}
+	</update>
+
+	<!-- 更新卡券状态 -->
+	<update id="updateCardStatusByBrandname" parameterType="CardGroup">
+		UPDATE
+		t_card_weixin SET `status` = 0 WHERE brandname = #{id}
+	</update>
+
+	<!-- 更新红包状态 -->
+	<update id="updateRedpacketStatusByBrandname" parameterType="CardGroup">
+		UPDATE t_redpacket SET status = 0 WHERE brandname = #{id}
+	</update>
+
+</mapper>

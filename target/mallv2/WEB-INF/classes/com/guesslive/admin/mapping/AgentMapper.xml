@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.AgentMapper">
+
+	<update id="updatePwd" parameterType="Agent">
+		update t_agent set passwd =
+		#{passwd} where id = #{id}
+	</update>
+
+	<update id="updateStatus" parameterType="Agent">
+		update t_agent 
+		<set>
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="settlestatus != null">
+				settlestatus = #{settlestatus},
+			</if>
+		</set> 
+		 where id = #{id}
+	</update>
+	
+	<select id="getAgentDetail" resultType="Agent">
+		select
+			id,agentname,address,mobile,account,passwd,status,period,contact,bankname,depositbank,bankaccount,payee from
+		t_agent where status=1 and id = #{id}
+	</select>
+
+	<select id="getAgentList" parameterType="Agent" resultType="Agent">
+		SELECT
+			(select GROUP_CONCAT(t.brandcode) from t_agent_brand t where t.agentid = a.id) brandcode,
+			(select GROUP_CONCAT(point) from t_agent_point t where t.agentId = a.id) point,
+			a.*,
+			ra.*,
+			tas.*
+		FROM
+			t_agent a
+		LEFT JOIN t_agent_settle tas ON a.id = tas.agent_id
+		LEFT JOIN t_returngoods_address ra ON a.id = ra.agentid
+ 		where a.status != 0 
+		<if test="agent.agentname !=null and agent.agentname !='' ">
+			and a.agentname like concat('%',#{agent.agentname},'%')
+		</if>
+		<if test="agent.mobile !=null and agent.mobile !='' ">
+			and a.mobile like concat('%',#{agent.mobile},'%')
+		</if>
+		<if test="agent.contact !=null and agent.contact !='' ">
+			and a.contact like concat('%',#{agent.contact},'%')
+		</if>
+		<if test="agent.id !=null and agent.id !='' ">
+			and a.id = #{agent.id}
+		</if>
+		<if test="agent.status !=null and agent.status !='' ">
+			and a.status = #{agent.status}
+		</if>
+		<if test="agent.agentaddress !=null and agent.agentaddress !='' ">
+			and a.agentaddress like concat('%',#{agent.agentaddress},'%')
+		</if>
+		limit #{start},#{rows}
+	</select>
+
+	<select id="getAgentCount" parameterType="Agent" resultType="int">
+		select count(*) from t_agent where status != 0
+		<if test="agentname !=null and agentname !='' ">
+			and agentname like concat('%',#{agentname},'%')
+		</if>
+		<if test="mobile !=null and mobile !='' ">
+			and mobile like concat('%',#{mobile},'%')
+		</if>
+		<if test="contact !=null and contact !='' ">
+			and contact like concat('%',#{contact},'%')
+		</if>
+		<if test="id !=null and id !='' ">
+			and id = #{id}
+		</if>
+		<if test="status !=null and status !='' ">
+			and status = #{status}
+		</if>
+		<if test="agentaddress !=null and agentaddress !='' ">
+			and agentaddress like concat('%',#{agentaddress},'%')
+		</if>
+	</select>
+	
+	<select id="getAgentBankList" parameterType="Agent" resultType="Agent">
+		select
+			id,agentname,mobile,bankname,depositbank,bankaccount,payee,settlestatus
+		from t_agent where 1=1 and status=1 and settlestatus > 1
+		<if test="agent.agentname !=null and agent.agentname !='' ">
+			and agentname like concat('%',#{agent.agentname},'%')
+		</if>
+		order by createtime desc
+		limit #{start},#{rows}
+	</select>
+
+	<select id="getAgentBankCount" parameterType="Agent" resultType="int">
+		select count(*) from t_agent where 1=1 and status=1 and settlestatus > 1
+		<if test="agentname !=null and agentname !='' ">
+			and agentname like concat('%',#{agentname},'%')
+		</if>
+	</select>
+
+	<select id="selectExprot" parameterType="Agent" resultType="Agent">
+		select * from t_agent where 1=1 and status=1
+		<if test="agentname !=null and agentname !='' ">
+			and agentname like concat('%',#{agentname},'%')
+		</if>
+		<if test="mobile !=null and mobile !='' ">
+			and mobile like concat('%',#{mobile},'%')
+		</if>
+		order by createtime desc
+	</select>
+	
+	<!-- 账户唯一性验证 -->
+	<select id="selectByAccount"  resultType="int">
+		SELECT count(*) FROM t_agent WHERE account=#{account}
+	</select>
+
+	<insert id="insertAgent" parameterType="Agent" useGeneratedKeys="true" keyProperty="id" >
+		insert into t_agent
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="agentname != null">
+				agentname,
+			</if>
+			<if test="agentaddress != null">
+				agentaddress,
+			</if>
+			<if test="contact != null">
+				contact,
+			</if>
+			<if test="mobile != null ">
+				mobile,
+			</if>
+			<if test="period != null ">
+				period,
+			</if>
+			<if test="status != null">
+				status,
+			</if>
+			<if test="logourl != null">
+				logourl,
+			</if>
+			<if test="description != null">
+				description,
+			</if>
+			<if test="web != null">
+				web,
+			</if>
+			<if test="serviceNo != null">
+				serviceNo,
+			</if>
+			<if test="settlestatus != null">
+				settlestatus,
+			</if>
+			<if test="settletype != null">
+				settletype,
+			</if>
+			<if test="email != null">
+				email,
+			</if>
+			<if test="invoice != null">
+				invoice,
+			</if>
+			<if test="invoiceType != null">
+				invoiceType,
+			</if>
+			<if test="invoiceContent != null">
+				invoiceContent,
+			</if>
+			<if test="abbr != null and abbr != '' ">
+				abbr,
+			</if>
+			agentcreatetime,
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="agentname != null">
+				#{agentname},
+			</if>
+			<if test="agentaddress != null">
+				#{agentaddress},
+			</if>
+			<if test="contact != null">
+				#{contact},
+			</if>
+			<if test="mobile != null ">
+				#{mobile},
+			</if>
+			<if test="period != null ">
+				#{period},
+			</if>
+			<if test="status != null">
+				1,
+			</if>
+			<if test="logourl != null">
+				#{logourl},
+			</if>
+			<if test="description != null">
+				#{description},
+			</if>
+			<if test="web != null">
+				#{web},
+			</if>
+			<if test="serviceNo != null">
+				#{serviceNo},
+			</if>
+			<if test="settlestatus != null">
+				#{settlestatus},
+			</if>
+			<if test="settletype != null">
+				#{settletype},
+			</if>
+			<if test="email != null">
+				#{email},
+			</if>
+			<if test="invoice != null">
+				#{invoice},
+			</if>
+			<if test="invoiceType != null">
+				#{invoiceType},
+			</if>
+			<if test="invoiceContent != null">
+				#{invoiceContent},
+			</if>
+			<if test="abbr != null and abbr != '' ">
+				#{abbr},
+			</if>
+			SYSDATE(),
+		</trim>
+	</insert>
+
+	<insert id="insertAgentSettle" parameterType="Agent">
+		insert into t_agent_settle
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				agent_id,
+			</if>
+			<if test="type != null">
+				type,
+			</if>
+			<if test="bankname != null">
+				bankname,
+			</if>
+			<if test="depositbank != null">
+				depositbank,
+			</if>
+			<if test="bankaccount != null">
+				bankaccount,
+			</if>
+			<if test="payee != null ">
+				payee,
+			</if>
+			<if test="alipayaccount != null ">
+				alipayaccount,
+			</if>
+				createtime,
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="type != null">
+				#{type},
+			</if>
+			<if test="bankname != null">
+				#{bankname},
+			</if>
+			<if test="depositbank != null">
+				#{depositbank},
+			</if>
+			<if test="bankaccount != null">
+				#{bankaccount},
+			</if>
+			<if test="payee != null ">
+				#{payee},
+			</if>
+			<if test="alipayaccount != null ">
+				#{alipayaccount},
+			</if>
+			<if test="abbr != null and abbr != '' ">
+				#{abbr},
+			</if>
+			SYSDATE(),
+		</trim>
+	</insert>
+
+	<insert id="insertReturnAddress" parameterType="Agent">
+		insert into t_returngoods_address
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				agentid,
+			</if>
+			<if test="consignee != null">
+				consignee,
+			</if>
+			<if test="phone != null">
+				phone,
+			</if>
+			<if test="province != null">
+				province,
+			</if>
+			<if test="city != null">
+				city,
+			</if>
+			<if test="address != null ">
+				address,
+			</if>
+			<if test="postcode != null ">
+				postcode,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="consignee != null">
+				#{consignee},
+			</if>
+			<if test="phone != null">
+				#{phone},
+			</if>
+			<if test="province != null">
+				#{province},
+			</if>
+			<if test="city != null">
+				#{city},
+			</if>
+			<if test="address != null ">
+				#{address},
+			</if>
+			<if test="postcode != null ">
+				#{postcode},
+			</if>
+		</trim>
+	</insert>
+
+	<update id="updateAgent" parameterType="Agent">
+		update t_agent
+		<set>
+			<if test="agentname != null">
+				agentname = #{agentname},
+			</if>
+			<if test="agentaddress != null">
+				agentaddress = #{agentaddress},
+			</if>
+			<if test="period != null">
+				period = #{period},
+			</if>
+			<if test="logourl != null">
+				logourl = #{logourl},
+			</if>
+			<if test="contact != null">
+				contact = #{contact},
+			</if>
+			<if test="mobile != null">
+				mobile = #{mobile},
+			</if>
+			<if test="settletype != null">
+				settletype = #{settletype},
+			</if>
+			<if test="email != null">
+				email = #{email},
+			</if>
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="settlestatus != null">
+				settlestatus = #{settlestatus},
+			</if>
+			<if test="description != null">
+				description = #{description},
+			</if>
+			<if test="web != null">
+				web = #{web},
+			</if>
+			<if test="serviceNo != null">
+				serviceNo = #{serviceNo},
+			</if>
+			<if test="invoice != null">
+				invoice = #{invoice},
+			</if>
+			<if test="invoiceType != null">
+				invoiceType = #{invoiceType},
+			</if>
+			<if test="invoiceContent != null">
+				invoiceContent = #{invoiceContent},
+			</if>
+			<if test="approver != null and approver != ''">
+				approver = #{approver},
+				approveTime = sysDate(),
+			</if>
+			<if test="abbr != null and abbr != '' ">
+				abbr = #{abbr},
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+
+	<update id="updateAgentSettle" parameterType="Agent">
+		update t_agent_settle
+		<set>
+			<if test="id != null">
+				agent_id = #{id},
+			</if>
+			<if test="type != null">
+				type = #{type},
+			</if>
+			<if test="bankname != null">
+				bankname = #{bankname},
+			</if>
+			<if test="depositbank != null">
+				depositbank = #{depositbank},
+			</if>
+			<if test="bankaccount != null">
+				bankaccount = #{bankaccount},
+			</if>
+			<if test="payee != null">
+				payee = #{payee},
+			</if>
+			<if test="alipayaccount != null">
+				alipayaccount = #{alipayaccount},
+			</if>
+		</set>
+		where agent_id=#{id}
+	</update>
+
+	<update id="updateReturnAddress" parameterType="Agent">
+		update t_returngoods_address
+		<set>
+			<if test="id != null">
+				agentid = #{id},
+			</if>
+			<if test="consignee != null">
+				consignee = #{consignee},
+			</if>
+			<if test="phone != null">
+				phone = #{phone},
+			</if>
+			<if test="province != null">
+				province = #{province},
+			</if>
+			<if test="city != null">
+				city = #{city},
+			</if>
+			<if test="address != null">
+				address = #{address},
+			</if>
+			<if test="postcode != null">
+				postcode = #{postcode},
+			</if>
+		</set>
+		where agentid=#{id}
+	</update>
+
+	<insert id="insertAgentBrand" >
+		insert into t_agent_brand
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="agentid != null">
+				agentid,
+			</if>
+			<if test="brandcode != null">
+				brandcode,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="agentid != null">
+				#{agentid},
+			</if>
+			<if test="brandcode != null">
+				#{brandcode},
+			</if>
+		</trim>
+	</insert>
+	
+	<delete id="deleteAgentBrand">
+		delete from t_agent_brand where agentid = #{agentid}
+	</delete>
+
+	<insert id="insertAgentPoint" >
+		insert into t_agent_point
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="agentid != null">
+				agentId,
+			</if>
+			<if test="point != null">
+				point,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="agentid != null">
+				#{agentid},
+			</if>
+			<if test="point != null">
+				#{point},
+			</if>
+		</trim>
+	</insert>
+	
+	<delete id="deleteAgentPoint">
+		delete from t_agent_point where agentId = #{agentid}
+	</delete>
+	
+	<select id="getAgentBrands" resultType="AgentBrand">
+		select (select b.brandname from t_brand b where b.brandcode = t.brandcode) brandname,t.* from t_agent_brand t where t.agentid = #{agentid}
+	</select>
+	
+	<select id="getAgentPoint" resultType="AgentPoint">
+		SELECT * from t_agent_point t where t.agentid = #{agentid}
+	</select>
+
+</mapper>

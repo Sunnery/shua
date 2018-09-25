@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+		>
+		
+		
+	
+	<!--
+		扫描com及子包，自动实例化带@controller注释的实例,
+		由于实例化controller时会对controller关联的Service类一同实例化，所以这里需要排除@Service
+	-->
+	<context:component-scan base-package="com.guesslive.admin" />
+	
+	
+	
+	<!-- 避免IE执行AJAX时,返回JSON出现下载文件 -->
+	<bean id="mappingJacksonHttpMessageConverter"
+		class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+		<property name="supportedMediaTypes">
+			<list>
+				<value>text/html;charset=UTF-8</value>
+			</list>
+		</property>
+	</bean>   
+	
+	<!-- 启动Spring MVC的注解功能，完成请求和注解POJO的映射 -->
+	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+		<property name="messageConverters">
+			<list>
+				<!-- json转换器 -->
+				<ref bean="mappingJacksonHttpMessageConverter" />
+			</list>
+		</property>
+	</bean>
+
+    <bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/pages/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+    <mvc:annotation-driven />
+    
+    <!--<bean class="com.guesslive.admin.swagger.SwaggerConfig"/>-->
+    
+    <mvc:view-controller path="/" view-name="login"/>
+    
+    <mvc:resources location="/css/" mapping="/css/**"/>
+    <mvc:resources location="/images/" mapping="/images/**"/>
+    <mvc:resources location="/js/" mapping="/js/**"/>
+    <mvc:resources location="/docapi/" mapping="/docapi/**" />
+	
+	<mvc:default-servlet-handler/>
+
+	 <mvc:interceptors>
+    	<bean class="com.guesslive.admin.common.interceptor.SessionInterceptor" />
+	</mvc:interceptors>
+	
+	<mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="com.guesslive.admin.common.interceptor.SessionInterceptor">
+	            <property name="allowUrls">  
+		            <list>  
+		             <!-- 如果请求中包含以下路径，则不进行拦截  -->
+		              <value>/login.html</value>
+		              <value>/login</value>
+		              <value>/toLogin</value>  
+		              <value>/js</value>  
+		              <value>/css</value>  
+		              <value>/images</value>
+		              <value>/docapi</value>
+		              <value>/api-docs</value>
+		            </list>  
+	          </property>
+          </bean>  
+        </mvc:interceptor>
+    </mvc:interceptors> 
+
+	<!-- 自定义异常处理，SimpleMappingExceptionResolver这个类可以是个空类，但是要写，方便在java代码里面使用 -->  
+    <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">  
+      <property name="exceptionMappings">  
+        <props>  
+          <prop key="com.guesslive.admin.common.exception.SessionTimeoutException">redirect:/toLogin</prop>  
+        </props>  
+      </property>  
+    </bean>
+    
+    <!-- AOP日志管理 -->
+    <aop:aspectj-autoproxy proxy-target-class="true" />
+	 
+	<!--避免日志过多，暂时不需要以下，只记录异常
+	 <bean id="before"
+		class="org.springframework.aop.support.RegexpMethodPointcutAdvisor">
+		<property name="advice">
+			<bean class="com.guesslive.admin.common.BeforeAOPInterceptor"></bean>
+		</property>
+		<property name="patterns">
+			<list>
+				<value>com.guesslive.admin.*.*</value>
+			</list>
+		</property>
+	</bean>
+	<bean id="after"
+		class="org.springframework.aop.support.RegexpMethodPointcutAdvisor">
+		<property name="advice">
+			<bean class="com.guesslive.admin.common.AfterAOPInterceptor"></bean>
+		</property>
+		<property name="patterns">
+			<list>
+				<value>com.guesslive.admin.*.*</value>
+			</list>
+		</property>
+	</bean>
+	 -->
+	<bean id="exception"
+		class="org.springframework.aop.support.RegexpMethodPointcutAdvisor">
+		<property name="advice">
+			<bean class="com.guesslive.admin.common.interceptor.ThrowsAOPInterceptor"></bean>
+		</property>
+		<property name="patterns">
+			<list>
+				<value>com.guesslive.admin.*.*</value>
+			</list>
+		</property>
+	</bean>
+	
+</beans>

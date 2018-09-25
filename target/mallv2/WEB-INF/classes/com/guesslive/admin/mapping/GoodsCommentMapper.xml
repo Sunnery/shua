@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.GoodsCommentMapper">
+
+	<select id="selectByAll" resultType="GoodsComment">
+		SELECT
+			t1.id,
+			t1.content,
+			t1.createtime,
+			t1.star,
+			t1.`status`,
+			t3.goodsname,
+			t3.iconurl,
+			t3.goodsid,
+			t2.num,
+			t2.price,
+			t4.account,
+			t4.nickname
+		FROM
+			t_goods_comment t1
+			LEFT JOIN t_order_goods t2 ON t1.orderid = t2.orderid
+			LEFT JOIN t_goods t3 ON t1.goodsid = t3.goodsid
+			LEFT JOIN t_account t4 ON t1.aid = t4.aid
+		ORDER BY
+			t1.createtime
+		limit #{start},#{rows}
+	</select>
+
+	<select id="selectAllCount" resultType="int">
+		SELECT
+			count(*)
+		FROM
+			t_goods_comment t1
+			LEFT JOIN t_order_goods t2 ON t1.orderid = t2.orderid
+			LEFT JOIN t_goods t3 ON t1.goodsid = t3.goodsid
+			LEFT JOIN t_account t4 ON t1.aid = t4.aid
+		ORDER BY
+			t1.createtime
+	</select>
+
+	<update id="updateStatus" parameterType="GoodsComment">
+		update t_goods_comment
+		<set>
+			<if test="status != null">
+				status=#{status}
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+</mapper>

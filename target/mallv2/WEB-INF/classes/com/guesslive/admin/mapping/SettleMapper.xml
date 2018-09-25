@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.SettleMapper">
+
+	<!--根据订单完成时间查询需结算订单，未结算 ，未退款退货 -->
+	<select id="selectOrderSettle" resultType="Order">
+		SELECT 
+		b.orderno,b.paymoney,b.closetime,b.setmoney,c.name,c.activitytype ,c.settlerate ,b.id
+		FROM t_order b LEFT JOIN t_order_goods c ON b.id=c.orderid
+		WHERE b.agentid=#{agentid}  AND
+		b.orderstatus =4 AND b.id not in(SELECT orderid FROM t_refund_return WHERE status not in(0, 2, 6) )
+		<if test="begindate != null and begindate !=''">
+			and b.closetime &gt;= #{begindate}
+		</if>
+		<if test="enddate != null and enddate !=''">
+			and b.closetime &lt; #{enddate}
+		</if>
+		order by b.closetime DESC
+	</select>
+	
+	<!--根据订单完成时间查询需结算订单总额，未结算 ，未退款退货 -->
+	<select id="selectOrderSettleMoney" resultType="Float">
+		SELECT SUM(b.paymoney-b.setmoney) FROM t_order b
+		LEFT JOIN t_order_goods c ON b.id=c.orderid
+		WHERE b.agentid=#{agentid} AND
+		b.orderstatus =4 AND b.id not in(SELECT orderid FROM t_refund_return WHERE status not in(0, 2, 6))
+		<if test="begindate != null and begindate !=''">
+			and b.closetime &gt;= #{begindate}
+		</if>
+		<if test="enddate != null and enddate !=''">
+			and b.closetime &lt; #{enddate}
+		</if>
+		order by b.closetime DESC
+	</select>
+	
+	<!-- 查询结算表结算时间 -->
+	<select id="selectSettleTime" resultType="Date">
+		select max(settleend)
+		from t_settle where agentid=#{agentid}
+	</select>
+ 
+ 	<!-- 查询供应商结算周期 -->
+ 	<select id="selectAgent" resultType="Agent">
+ 		select * from t_agent where id=#{id}
+ 	</select>
+ 	
+ 	<!-- 查询退款退货完成订单 ，待结算-->
+ 	<select id="selectRefundSettle" resultType="Order">
+ 		SELECT o.orderno,o.paymoney,o.closetime,o.setmoney,g.name,g.activitytype ,g.settlerate
+		FROM t_refund_return r LEFT JOIN t_order o ON r.orderid=o.id  LEFT JOIN t_order_goods g ON o.id=g.orderid
+  		WHERE r.`status`=5 AND o.agentid=#{agentid} 
+  		<if test="begindate != null and begindate !=''">
+			and r.updatetime &gt;= #{begindate}
+		</if>
+		<if test="enddate != null and enddate !=''">
+			and r.updatetime &lt; #{enddate}
+		</if>
+		order by r.updatetime DESC
+ 	</select>
+ 	
+ 	<!-- 查询退款退货完成订单总额，待结算 -->
+ 	<select id="selectRefundSettleMoney" resultType="Float">
+ 		SELECT SUM(o.paymoney-o.setmoney) FROM
+ 		t_refund_return r LEFT JOIN t_order o ON r.orderid=o.id  LEFT JOIN t_order_goods g ON o.id=g.orderid
+  		WHERE r.`status`=5 AND o.agentid=#{agentid} 
+  		<if test="begindate != null and begindate !=''">
+			and r.updatetime &gt;= #{begindate}
+		</if>
+		<if test="enddate != null and enddate !=''">
+			and r.updatetime &lt; #{enddate}
+		</if>
+		order by r.updatetime DESC
+ 	</select>
+ 	
+	<!-- 查询结算列表 -->
+	<select id="selectSettleAll" resultType="Settle">
+		SELECT s.* , a.agentname,
+		(select SUM(t.paymoney) from t_order t where t.id in (select orderid from t_settle_order t where t.seid =s.id))paymoney,
+		(select count(1) from t_order_goods t where t.orderid in (select orderid from t_settle_order t where t.seid =s.id))goodssnum
+		 FROM t_settle s LEFT JOIN t_agent a ON s.agentid=a.id
+		<where>
+			<if test="settle.settleno != null and settle.settleno != ''">
+				and s.settleno = #{settle.settleno}
+			</if>
+			<if test="settle.begindate != null and settle.begindate !=''">
+				and s.createtime &gt;= #{settle.begindate}
+			</if>
+			<if test="settle.enddate != null and settle.enddate !=''">
+				and s.createtime &lt; #{settle.enddate}
+			</if>
+			<if test="settle.status != null">
+				and s.status = #{settle.status}
+			</if>
+			<if test="settle.agentid != null and settle.agentid != ''">
+				and s.agentid =#{settle.agentid}
+			</if>
+		</where>
+		order by updatetime DESC
+		limit
+		#{start},#{rows}
+	</select>
+
+	<!-- 查询结算表总数 -->
+	<select id="selectCount" resultType="int">
+		SELECT count(*) FROM t_settle s LEFT JOIN t_agent a ON s.agentid=a.id
+		<where>
+			<if test="settleno != null and settleno != ''">
+				and s.settleno = #{settleno}
+			</if>
+			<if test="begindate != null and begindate !=''">
+				and s.createtime &gt;= #{begindate}
+			</if>
+			<if test="enddate != null and enddate !=''">
+				and s.createtime &lt; #{enddate}
+			</if>
+			<if test="status != null">
+				and s.status = #{status}
+			</if>
+			<if test="agentid != null and agentid != ''">
+				and s.agentid =#{agentid}
+			</if>
+		</where>
+	</select>
+
+	<!-- 根据结算记录查询结算详情 (已结算) -->
+	<select id="selectOrderById" resultType="Order">
+	SELECT 
+		b.orderno,b.paymoney,b.closetime,b.setmoney,c.name,c.activitytype ,c.settlerate,b.id
+		FROM t_settle_order o LEFT JOIN t_order b ON o.orderid = b.id LEFT JOIN t_order_goods c ON b.id=c.orderid
+		WHERE o.seid=#{seid} 
+		order by b.closetime DESC
+	</select>
+	
+	<!-- 根据结算记录查询所有订单总额 (已结算) -->
+	<select id="selectMoneyById" parameterType="map" resultType="Float">
+		SELECT SUM(b.paymoney-b.setmoney) FROM t_settle_order o LEFT JOIN t_order b ON o.orderid = b.id
+		LEFT JOIN t_order_goods c ON b.id=c.orderid
+		WHERE o.seid=#{seid}  
+	</select>
+	
+	<!-- 根据id查询结算打款信息 -->
+	<select id="selectSettleById" resultType="Settle">
+		select a.* ,b.agentname
+		FROM t_agent b LEFT JOIN t_settle a ON a.agentid=b.id
+		where id=#{id}
+	</select>
+	
+	<!-- 添加结算表数据 -->
+	<insert id="insertSettle" parameterType="Settle" useGeneratedKeys="true" keyProperty="id">
+		insert into t_settle
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="settleno != null">
+				settleno,
+			</if>
+			<if test="agentid != null">
+				agentid,
+			</if>
+			<if test="setmoney != null">
+				setmoney,
+			</if>
+			<if test="ordernum != null">
+				ordernum,
+			</if>
+			<if test="settlestart != null">
+				settlestart,
+			</if>
+			<if test="settleend != null">
+				settleend,
+			</if>
+			<if test="createtime != null">
+				createtime,
+			</if>
+			<if test="status != null">
+				status,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="settleno != null">
+				#{settleno},
+			</if>
+			<if test="agentid != null">
+				#{agentid},
+			</if>
+			<if test="setmoney != null">
+				#{setmoney},
+			</if>
+			<if test="ordernum != null">
+				#{ordernum},
+			</if>
+			<if test="settlestart != null">
+				#{settlestart},
+			</if>
+			<if test="settleend != null">
+				#{settleend},
+			</if>
+			<if test="createtime != null">
+				#{createtime},
+			</if>
+			<if test="status != null">
+				#{status},
+			</if>
+		</trim>
+	</insert>
+	
+	<!-- 添加结算订单表数据 -->
+	<insert id="inserSettleOrder" parameterType="SettleOrder" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_settle_order (seid,orderid) values 
+        	(#{seid},#{orderid})
+	</insert>
+
+    <!-- 修改结算状态 -->
+	<update id="updateSettleStatus" parameterType="Settle">
+		update t_settle
+		<set>
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="updatetime != null">
+				updatetime = #{updatetime},
+			</if>
+			<if test="remark != null" >
+		    	remark = #{remark},
+	        </if>
+		</set>
+		where id=#{id}
+	</update>
+	
+	<!-- 添加打款信息 -->
+	<update id="insertBankno" parameterType="Settle">
+		update t_settle
+		<set>
+			<if test="bankno != null">
+				bankno = #{bankno},
+			</if>
+			<if test="paytime != null">
+				paytime = #{paytime},
+			</if>
+			<if test="bill != null" >
+	    	 	bill = #{bill},
+	        </if>
+		</set>
+		where id=#{id}
+	</update>
+
+</mapper>

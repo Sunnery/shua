@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.BrandMapper">
+
+	<insert id="insertBrand" parameterType="Brand" useGeneratedKeys="true" keyProperty="id" >
+		insert into t_brand
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="brandname != null">
+				brandname,
+			</if>
+			<if test="brandesc != null">
+				brandesc,
+			</if>
+			<if test="brandlogo != null">
+				brandlogo,
+			</if>
+			<if test="createtime != null">
+				createtime,
+			</if>
+			<if test="source != null">
+				source,
+			</if>
+			<if test="excode != null">
+				excode,
+			</if>
+			<if test="status != null">
+				status,
+			</if>
+			<if test="updatetime != null">
+				updatetime,
+			</if>
+			<if test="brandcode != null">
+				brandcode,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="brandname != null">
+				#{brandname},
+			</if>
+			<if test="brandesc != null">
+				#{brandesc},
+			</if>
+			<if test="brandlogo != null">
+				#{brandlogo},
+			</if>
+			<if test="createtime != null">
+				#{createtime},
+			</if>
+			<if test="source != null">
+				#{source},
+			</if>
+			<if test="excode != null">
+				#{excode},
+			</if>
+			<if test="status != null">
+				#{status},
+			</if>
+			<if test="updatetime != null">
+				#{updatetime},
+			</if>
+			<if test="brandcode != null">
+				#{brandcode},
+			</if>
+		</trim>
+	</insert>
+
+	<update id="updateBrand" parameterType="Brand">
+		update t_brand
+		<set>
+			<if test="brandname != null">
+				brandname = #{brandname},
+			</if>
+			<if test="brandesc != null">
+				brandesc = #{brandesc},
+			</if>
+			<if test="brandlogo != null">
+				brandlogo = #{brandlogo},
+			</if>
+			<if test="createtime != null">
+				createtime = #{createtime},
+			</if>
+			<if test="source != null">
+				source = #{source},
+			</if>
+			<if test="excode != null">
+				excode = #{excode},
+			</if>
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="updatetime != null">
+				updatetime = #{updatetime},
+			</if>
+			<if test="brandcode != null">
+				brandcode = #{brandcode},
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+     
+     <select id="selectBrand" parameterType="Brand" resultType="Brand">
+     	SELECT
+			*
+		FROM
+			t_brand a
+ 		where 1=1 
+		<if test="brand.brandname !=null and brand.brandname !='' ">
+			and a.brandname like concat('%',#{brand.brandname},'%')
+		</if>
+		<if test="brand.id !=null and brand.id !='' ">
+			and a.id like concat('%',#{brand.id},'%')
+		</if>
+		order by createtime desc
+		limit #{start},#{rows}
+     </select>
+     
+     <select id="getBrandCount" parameterType="Brand" resultType="int">
+     	SELECT
+			count(1)
+		FROM
+			t_brand a
+ 		where 1=1 
+		<if test="brandname !=null and brandname !='' ">
+			and a.brandname like concat('%',#{brandname},'%')
+		</if>
+		<if test="id !=null and id !='' ">
+			and a.id like concat('%',#{id},'%')
+		</if>
+		order by createtime desc
+     </select>
+     
+     <select id="selectByAgentid" resultType="Brand">
+     	select * from t_brand where agentid=#{agentid}
+     </select>
+     
+     <select id="selectBrandById" resultType="Brand">
+		select * from t_brand where id = #{id}
+	</select>
+	
+	<!-- 品牌唯一性校验 -->
+	<select id="selectBrandName" resultType="int">
+		SELECT COUNT(1) FROM t_brand WHERE brandname=#{brandname}
+	</select>
+	
+	<!-- 编辑页面添加品牌 -->
+	<insert id="insertById" parameterType="Brand" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_brand (brandname,brandlogo,agentid,todaysettlerate,limitsettlerate,sharesettlerate,cardsettlerate,createtime) values 
+        	(#{brandname},#{brandlogo},#{agentid},#{todaysettlerate},#{limitsettlerate},#{sharesettlerate},#{cardsettlerate},#{createtime})
+	</insert>
+	
+</mapper>

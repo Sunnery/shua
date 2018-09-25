@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.RefundReturnMapper">
+
+    <resultMap id="BaseResultMap" type="RefundReturn">
+		<id column="id" property="id" />
+		<result column="refundno" property="refundno" />
+		<result column="orderid" property="orderid" />
+		<result column="aid" property="aid" />
+		<result column="productid" property="productid" />
+		<result column="createtime" property="createtime" />
+		<result column="updatetime" property="updatetime" />
+		<result column="refundmoney" property="refundmoney" />
+		<result column="type" property="type" />
+		<result column="paytype" property="paytype" />
+		<result column="reason" property="reason" />
+		<result column="status" property="status" />
+		<result column="state" property="state" />
+		<result column="mark" property="mark" />
+		<result column="phone" property="phone"/>
+		<result column="name" property="name"/>
+		<result column="payno" property="payno"/>
+		<result column="orderno" property="orderno"/>
+		<result column="com" property="com"/>
+		<result column="nu" property="nu"/>
+		<result column="comname" property="comname"/>
+		<result column="paymoney" property="paymoney" />
+		<result column="orderno" property="orderno" />
+		<result column="verifyreason" property="verifyreason" />
+		<result column="verifytime" property="verifytime" />
+		<result column="verifypeople" property="verifypeople" />
+		<result column="refundreason" property="refundreason" />
+		<result column="refundtime" property="refundtime" />
+		<result column="refundpeople" property="refundpeople" />
+		<result column="refundmentreason" property="refundmentreason" />
+		<result column="refundmenttime" property="refundmenttime" />
+		<result column="refundmentpeople" property="refundmentpeople" />
+		<result column="agentid" property="agentid" />
+		<result column="refundtype" property="refundtype" />
+		<result column="bankaccount" property="bankaccount" />
+		<result column="payee" property="payee" />
+		<result column="num" property="num" />
+		<collection property="orderGoods" ofType="OrderGoods">
+			<result property="goodsid" column="goodsid" />
+			<result property="goodsname" column="goodsname" />
+			<result property="iconurl" column="iconurl" />
+		</collection>
+	</resultMap>
+
+	<!-- 退款退货列表 -->
+	<select id="selectList" resultMap="BaseResultMap">
+		SELECT
+			b.paytype,CONCAT(s.bankname,s.depositbank) refundtype,s.bankaccount,s.payee,c.num, 
+			a.id,a.refundno,a.orderid,b.orderno,a.verifyreason,a.verifytime,(select t.`name` from t_sys_user t where t.id = a.verifypeople)verifypeople,a.refundreason,a.refundtime,(select t.`name` from t_sys_user t where t.id = a.refundpeople)refundpeople,a.refundmentreason,a.refundmenttime,(select t.`name` from t_sys_user t where t.id = a.refundmentpeople)refundmentpeople,a.aid,a.createtime,a.updatetime,a.productid,a.refundmoney,a.type,a.reason,a.state,a.status,a.mark,c.name goodsname,c.iconurl ,b.paytype,b.phone,
+			b.paymoney,b.agentid,d.com,d.nu,e.comname FROM t_refund_return a 
+				LEFT JOIN t_order b ON a.orderid=b.id 
+					LEFT JOIN t_order_goods c ON b.id=c.orderid	
+						LEFT JOIN t_order_kuaidi d ON a.orderid=d.orderid AND d.type = #{refund.type}
+							LEFT JOIN t_kuaidi_company e ON d.com= e.comcode
+							LEFT JOIN t_agent_settle s on b.agentid = s.agent_id
+								WHERE a.type=#{refund.type}
+		<if test="refund.orderno != null and refund.orderno != ''">
+			and b.orderno = #{refund.orderno}
+		</if>
+		<if test="refund.refundno != null and refund.refundno != ''">
+			and a.refundno like concat('%',#{refund.refundno},'%')
+		</if>
+		<if test="refund.paytype != null">
+			and b.paytype = #{refund.paytype}
+		</if>
+		<if test="refund.status != null ">
+			and a.status = #{refund.status}
+		</if>
+		<if test="refund.phone != null and refund.phone != ''">
+			and b.phone = #{refund.phone}
+		</if>
+		<if test="refund.begindate != null and refund.begindate != ''">
+			and a.createtime &gt;= #{refund.begindate}
+		</if>
+		<if test="refund.enddate != null and refund.begindate != ''">
+			and a.createtime &lt;= #{refund.enddate}
+		</if>
+		<if test="refund.agentid != null and refund.agentid != ''">
+			and b.agentid = #{refund.agentid}
+		</if>
+		order by a.createtime DESC
+		limit #{start},#{rows}
+	</select>
+
+	<select id="selectCount" resultType="int">
+		SELECT COUNT(*) FROM t_refund_return a
+		LEFT JOIN t_order b ON a.orderid=b.id
+		LEFT JOIN t_order_goods c ON b.id=c.orderid
+		WHERE a.type=#{type}
+		<if test="orderno != null and orderno != ''">
+			and b.orderno = #{orderno}
+		</if>
+		<if test="refundno != null and refundno != ''">
+			and a.refundno like concat('%',#{refundno},'%')
+		</if>
+		<if test="paytype != null">
+			and b.paytype = #{paytype}
+		</if>
+		<if test="status != null ">
+			and a.status = #{status}
+		</if>
+		<if test="phone != null and phone != ''">
+			and b.phone = #{phone}
+		</if>
+		<if test="begindate != null and begindate != ''">
+			and a.createtime &gt;= #{begindate}
+		</if>
+		<if test="enddate != null and begindate != ''">
+			and a.createtime &lt;= #{enddate}
+		</if>
+		<if test="agentid != null and agentid != ''">
+			and b.agentid = #{agentid}
+		</if>
+	</select>
+	
+	<!-- 修改退款退货状态 -->
+	<update id="updateRefundStatus" parameterType="RefundReturn">
+	     update t_refund_return 
+		     <set >
+			     <if test="status != null" >
+			    	 status = #{status},
+			     </if>
+			     <if test="mark != null and mark != ''" >
+			    	 mark = #{mark},
+			    	 updatetime = sysDate(),
+			     </if>
+			     <if test="verifyreason != null and verifyreason != ''">
+					 verifyreason = #{verifyreason},
+					 verifytime = sysDate(),
+					 verifypeople = #{people},
+				 </if>
+			     <if test="refundreason != null and refundreason != ''">
+					 refundreason = #{refundreason},
+					 refundtime = sysDate(),
+					 refundpeople = #{people},
+				 </if>
+			     <if test="refundmentreason != null and refundmentreason != ''">
+					 refundmentreason = #{refundmentreason},
+					 refundmenttime = sysDate(),
+					 refundmentpeople = #{people},
+				 </if>
+		     </set>
+	     where id=#{id}
+	</update>
+	
+	<select id="selectById" resultType="RefundReturn">
+		select * from t_refund_return where id=#{id}
+	</select>
+	
+	<!-- 退款退货完成时修改订单状态 -->
+	<update id="updateSettlemoney" parameterType="Order">
+		update t_order
+			<set >
+			     <if test="orderstatus != null" >
+			    	 orderstatus = #{orderstatus},
+			     </if>
+			     <if test="closetime != null">
+					 closetime = #{closetime},
+				 </if>
+		     </set>
+	     where id=#{id}
+	</update>
+	
+	<!-- 查询退款金额及退款流水账号信息 -->
+	<select id="selectRefundMoney" resultType="RefundReturn">
+		SELECT
+		re.id, re.refundno,re.orderid, re.refundmoney,o.paytype,o.payno FROM t_refund_return re
+		LEFT JOIN t_order o ON o.id=re.orderid WHERE re.id=#{id}
+	</select>
+	
+	<!-- 查询手动退货所需数据 -->
+	<select id="selectReturnOrder" resultType="RefundReturn">
+		SELECT o.orderno, o.id orderid, o.paymoney, o.aid, og.productid FROM t_order o 
+		LEFT JOIN t_order_goods og ON o.id=og.orderid
+		 WHERE o.orderno=#{orderno};
+	</select>
+	
+	<!-- 手动添加退货订单 -->
+	<insert id="insertReturn" parameterType="RefundReturn"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_refund_return
+			(refundno, orderid, aid, productid, refundmoney,
+			type, state, reason,status, createtime,updatetime) values
+			(#{refundno},#{orderid}, #{aid},#{productid}, #{refundmoney}, #{type},
+			#{state},#{reason},#{status},#{createtime},#{updatetime});
+	</insert>
+	
+	<!-- 导出退款退货列表 -->
+	<select id="exportRefundReturnList" resultType="ExportRefundReturn">
+		SELECT
+		a.id,a.refundno,a.orderid,a.aid,a.createtime,a.updatetime,a.productid,a.refundmoney,a.type,a.reason,a.status,a.mark,a.createtime,e.goodsname,
+		b.paytype,b.phone,b.orderno,b.payno,b.bill,b.name,b.phone,b.prov,b.city,b.address ,b.paymoney
+		,c.specs, c.`name` goodsname,c.activitytype,c.price,c.num,f.brandname
+		,k.nu ,kc.comname,ac.nickname , ac.account
+		FROM t_refund_return a
+		LEFT JOIN t_order b ON a.orderid=b.id
+		LEFT JOIN t_order_goods c ON b.id=c.orderid
+		LEFT JOIN t_goods e ON c.goodsid=e.goodsid
+		LEFT JOIN t_brand f ON e.brandid=f.id
+		LEFT JOIN t_order_kuaidi k ON a.orderid= k.orderid and k.type=#{export.type}
+		LEFT JOIN t_kuaidi_company kc ON kc.comcode=k.com
+		LEFT JOIN t_account ac ON ac.aid = a.aid
+		WHERE a.type=#{export.type}
+		<if test="export.orderno != null and export.orderno != ''">
+			and b.orderno like concat('%',#{export.orderno},'%')
+		</if>
+		<if test="export.refundno != null and export.refundno != ''">
+			and a.refundno like concat('%',#{export.refundno},'%')
+		</if>
+		<if test="export.paytype != null">
+			and b.paytype = #{export.paytype}
+		</if>
+		<if test="export.status != null ">
+			and a.status = #{export.status}
+		</if>
+		<if test="export.phone != null and export.phone != ''">
+			and b.phone = #{export.phone}
+		</if>
+		<if test="export.begindate != null and export.begindate != ''">
+			and a.createtime &gt;= #{export.begindate}
+		</if>
+		<if test="export.enddate != null and export.enddate != ''">
+			and a.createtime &lt;= #{export.enddate}
+		</if>
+		order by a.createtime DESC
+	</select>
+	
+</mapper>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.CommentMapper">
+     
+     <select id="searchCommentCount"  parameterType="GoodsComment" resultType="int">
+		select count(1)
+		 from (t_goods_comment as gc LEFT JOIN t_goods g on gc.goodsid = g.goodsid) LEFT JOIN t_account a on a.aid = gc.aid
+		where 1=1
+		 <if test="star !=null and star !='' ">
+			and gc.star = #{star}
+		</if>
+		 <if test="content !=null and content !='' ">
+			and gc.content like concat('%',#{content},'%')
+		</if>
+		 <if test="status !=null and status !='' ">
+			and gc.status = #{status}
+		</if>
+		 <if test="goodsname !=null and goodsname !='' ">
+			and g.goodsname like concat('%',#{goodsname},'%')
+		</if>
+		 <if test="account !=null and account !='' ">
+			and a.account = #{account}
+		</if>
+		 <if test="nickname !=null and nickname !='' ">
+			and a.nickname like concat('%',#{nickname},'%')
+		</if>
+     </select>
+     
+     <select id="getCommentList" resultType="GoodsComment">
+		select gc.*,g.goodsname,g.iconurl,a.icon userIcon,a.account,a.nickname
+		 from (t_goods_comment as gc LEFT JOIN t_goods g on gc.goodsid = g.goodsid) LEFT JOIN t_account a on a.aid = gc.aid
+		where 1=1
+		 <if test="goodsComment.star !=null and goodsComment.star !='' ">
+			and gc.star = #{goodsComment.star}
+		</if>
+		 <if test="goodsComment.content !=null and goodsComment.content !='' ">
+			and gc.content like concat('%',#{goodsComment.content},'%')
+		</if>
+		 <if test="goodsComment.status !=null and goodsComment.status !='' ">
+			and gc.status = #{goodsComment.status}
+		</if>
+		 <if test="goodsComment.goodsname !=null and goodsComment.goodsname !='' ">
+			and g.goodsname like concat('%',#{goodsComment.goodsname},'%')
+		</if>
+		 <if test="goodsComment.account !=null and goodsComment.account !='' ">
+			and a.account = #{goodsComment.account}
+		</if>
+		 <if test="goodsComment.nickname !=null and goodsComment.nickname !='' ">
+			and a.nickname like concat('%',#{goodsComment.nickname},'%')
+		</if>
+	 		order by gc.createtime DESC limit #{start},#{rows}
+     </select>
+     
+     <insert id="insertComment" parameterType="Comment" useGeneratedKeys="true" keyProperty="id">
+     	insert into t_default_comment (content,createtime) values (#{content},now())
+     </insert>
+     
+     <delete id="deleteComment" parameterType="GoodsComment" >
+		update t_goods_comment set status = #{status} where id = #{id}
+	 </delete>
+          
+</mapper>

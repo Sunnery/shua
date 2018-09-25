@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.CardMallMapper">
+
+	<!--查询商城卡券列表 -->
+	<select id="selectAll" resultType="CardMall">
+		SELECT * FROM t_card_mall
+		<where>
+			and `status` =0
+			<if test="cardmall.cardid != '' and cardmall.cardid != null">
+				and cardid=#{cardmall.cardid}
+			</if>
+			<if test="cardmall.title != '' and cardmall.title != null">
+				and title like '%${cardmall.title}%'
+			</if>
+			<if test="cardmall.type != '' and cardmall.type != null">
+				and type=#{cardmall.type}
+			</if>
+			<if test="cardmall.startdate != '' and cardmall.startdate != null">
+				and endtime &gt;= #{cardmall.startdate}
+			</if>
+			<if test="cardmall.endtdate != '' and cardmall.endtdate != null">
+				and endtime &lt;= #{cardmall.endtdate}
+			</if>
+		</where>
+		order by createtime DESC
+		limit #{start},#{rows}
+	</select>
+
+	<!-- 查询商城卡券总数 -->
+	<select id="selelctTotal" resultType="int">
+		select count(*) FROM t_card_mall
+		<where>
+			and `status` =0
+			<if test="cardid != '' and cardid != null">
+				and cardid=#{cardid}
+			</if>
+			<if test="title != '' and title != null">
+				and title like '%${title}%'
+			</if>
+			<if test="type != '' and type != null">
+				and type=#{type}
+			</if>
+			<if test="startdate != '' and startdate != null">
+				and endtime &gt;= #{startdate}
+			</if>
+			<if test="endtdate != '' and endtdate != null">
+				and endtime &lt;= #{endtdate}
+			</if>
+		</where>
+	</select>
+	
+	<resultMap type="CardMall" id="CardMallResultMap">
+		<id property="id" column="id" />
+		<result property="cardid" column="cardid" />
+		<result property="title" column="title" />
+		<result property="subtitle" column="subtitle" />
+		<result property="background" column="background" />
+		<result property="type" column="type" />
+		<result property="discount" column="discount" />
+		<result property="threshold" column="threshold" />
+		<result property="reducecost" column="reducecost" />
+		<result property="total" column="total" />
+		<result property="storage" column="storage" />
+		<result property="status" column="status" />
+		<result property="endtime" column="endtime" />
+		<result property="validTimeType" column="validTimeType" />
+		<result property="fixedTerm" column="fixedTerm" />
+		<result property="fixedBeginTerm" column="fixedBeginTerm" />
+		<result property="logo" column="logo" />
+		<result property="productids" column="productids" />
+		<result property="areaids" column="areaids" />
+		<result property="push" column="push" />
+		<result property="limits" column="limits" />
+		<collection property="goods" ofType="Goods">
+			<result property="goodssn" column="goodssn" />
+			<result property="goodsname" column="goodsname" />
+			<result property="iconurl" column="iconurl" />
+			<result property="goodsname" column="goodsname" />
+			<result property="activitytype" column="activitytype" />
+		</collection>
+		<collection property="areaActive" ofType="AreaActive">
+			<result property="imgurl" column="imgurl" />
+			<result property="name" column="name" />
+			<result property="acttitle" column="acttitle" />
+			<result property="type" column="type" />
+			<result property="ispro" column="ispro" />
+		</collection>
+	</resultMap>
+
+	<!-- 根据id查询卡券信息 -->
+	<select id="selectById" resultMap="CardMallResultMap">
+		SELECT * FROM t_card_mall
+		WHERE id=#{id}
+	</select>
+	
+	<!-- 查询卡券中商品 -->
+	<select id="selectGoodsById" resultType="Goods">
+		select 
+			CASE WHEN (select MIN(t.marketprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.marketprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.marketprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.marketprice),'-',max(t.marketprice)) from t_product t where t.goodsid = g.goodsid) END marketprice,
+			CASE WHEN (select MIN(t.saleprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.saleprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.saleprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.saleprice),'-',max(t.saleprice)) from t_product t where t.goodsid = g.goodsid) END saleprice,
+			(select sum(t.stock) from t_product t where t.goodsid = g.goodsid) stock,
+			CASE WHEN (select MIN(t.settleprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.settleprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.settleprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.settleprice),'-',max(t.settleprice)) from t_product t where t.goodsid = g.goodsid) END settleprice,
+			CASE WHEN (select MIN(t.activeprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.activeprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.activeprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.activeprice),'-',max(t.activeprice)) from t_product t where t.goodsid = g.goodsid) END activeprice,
+			IFNULL((select t.brandname from t_brand t where t.brandcode = g.brandCode),'') brandname,
+			(select t.catename from t_goods_category t where t.id = g.cateCode)cateName,
+			(select t.catename from t_goods_category t where t.id = g.subcateCode)subcateName,
+			(select point from t_agent_point t where t.pointId = g.pointid) point,
+			(select t.agentname from t_agent t where t.id = g.agentid)agentname, 
+			g.* 
+		 from t_goods g WHERE g.goodsid = #{goodsid}
+	</select>
+	<!-- 查询所有已上架商品 -->
+	<select id="selectGoodsByGId" resultType="Goods">
+		select * from t_goods WHERE status = 5
+	</select>
+	
+	<!-- 查询所有品牌 -->
+	<select id="selectAreaActiveByAId" resultType="AreaActive">
+		SELECT * FROM t_area_active WHERE type=1
+	</select>
+	
+	<!-- 查询卡券中的品牌 -->
+	<select id="selectAreaActiveById" resultType="AreaActive">
+		SELECT * FROM t_area_active WHERE id = #{id}
+	</select>
+	
+	<!-- 根据id删除一条卡券信息 -->
+	<update id="updateCardById" parameterType="CardMall">
+		UPDATE
+		t_card_mall SET
+		status = 1 WHERE id = #{id}
+	</update>
+
+	<!-- 根据id修改商城卡券信息 -->
+	<update id="updateCardMall" parameterType="CardMall">
+		UPDATE t_card_mall
+		<set>
+			<if test="title != null">
+				title = #{title},
+			</if>
+			<if test="subtitle != null">
+				subtitle = #{subtitle},
+			</if>
+			<if test="background != null">
+				background = #{background},
+			</if>
+			<if test="discount != null">
+				discount = #{discount},
+			</if>
+			<if test="threshold != null">
+				threshold = #{threshold},
+			</if>
+			<if test="reducecost != null">
+				reducecost = #{reducecost},
+			</if>
+			<if test="total != null">
+				total = #{total},
+			</if>
+			<if test="storage != null">
+				storage = #{storage},
+			</if>
+			<if test="endtime != null">
+				endtime = #{endtime},
+			</if>
+			<if test="validTimeType != null">
+				validTimeType = #{validTimeType},
+			</if>
+			<if test="fixedTerm != null">
+				fixedTerm = #{fixedTerm},
+			</if>
+			<if test="fixedBeginTerm != null">
+				fixedBeginTerm = #{fixedBeginTerm},
+			</if>
+			<if test="logo != null">
+				logo = #{logo},
+			</if>
+			<if test="productids != null">
+				productids = #{productids},
+			</if>
+			<if test="areaids != null">
+				areaids = #{areaids},
+			</if>
+			<if test="push != null">
+				push = #{push},
+			</if>
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="limits != null">
+				limits = #{limits},
+			</if>
+		</set>
+		where id = #{id}
+	</update>
+
+	<!-- 添加商城卡券 -->
+	<insert id="insertCardMall" useGeneratedKeys="true" keyProperty="id">
+		insert into t_card_mall
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="cardid != null">
+				cardid,
+			</if>
+			<if test="title != null">
+				title,
+			</if>
+			<if test="subtitle != null">
+				subtitle,
+			</if>
+			<if test="background != null">
+				background,
+			</if>
+			<if test="type != null">
+				type,
+			</if>
+			<if test="discount != null">
+				discount,
+			</if>
+			<if test="threshold != null">
+				threshold,
+			</if>
+			<if test="reducecost != null">
+				reducecost,
+			</if>
+			<if test="endtime != null ">
+				endtime,
+			</if>
+			<if test="total != null ">
+				total,
+			</if>
+			<if test="storage != null ">
+				storage,
+			</if>
+			<if test="status != null ">
+				status,
+			</if>
+			<if test="logo != null ">
+				logo,
+			</if>
+			<if test="createtime != null ">
+				createtime,
+			</if>
+			<if test="validTimeType != null ">
+				validTimeType,
+			</if>
+			<if test="fixedTerm != null ">
+				fixedTerm,
+			</if>
+			<if test="fixedBeginTerm != null ">
+				fixedBeginTerm,
+			</if>
+			<if test="push != null ">
+				push,
+			</if>
+			<if test="limits != null ">
+				limits,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="cardid != null">
+				#{cardid},
+			</if>
+			<if test="title != null">
+				#{title},
+			</if>
+			<if test="subtitle != null">
+				#{subtitle},
+			</if>
+			<if test="background != null">
+				#{background},
+			</if>
+			<if test="type != null">
+				#{type},
+			</if>
+			<if test="discount != null">
+				#{discount},
+			</if>
+			<if test="threshold != null">
+				#{threshold},
+			</if>
+			<if test="reducecost != null">
+				#{reducecost},
+			</if>
+			<if test="endtime != null ">
+				#{endtime},
+			</if>
+			<if test="total != null ">
+				#{total},
+			</if>
+			<if test="storage != null ">
+				#{storage},
+			</if>
+			<if test="status != null ">
+				#{status},
+			</if>
+			<if test="logo != null ">
+				#{logo},
+			</if>
+			<if test="createtime != null ">
+				#{createtime},
+			</if>
+			<if test="validTimeType != null ">
+				#{validTimeType},
+			</if>
+			<if test="fixedTerm != null ">
+				#{fixedTerm},
+			</if>
+			<if test="fixedBeginTerm != null ">
+				#{fixedBeginTerm},
+			</if>
+			<if test="push != null ">
+				#{push}
+			</if>
+			<if test="limits != null ">
+				#{limits}
+			</if>
+		</trim>
+	</insert>
+
+	<insert id="insertCardGoods">
+		insert into t_card_goods (cardid,goodsid) values (#{cardid},#{goodsid})
+	</insert>
+
+	<insert id="insertCardArea">
+		insert into t_card_area (cardid,areaid) values (#{cardid},#{areaid})
+	</insert>
+	
+	<delete id="deleteCardGoods" parameterType="CardMall">
+		delete from t_card_goods where cardid = #{cardid} and goodsid = #{goodsid}
+	</delete>
+	
+	<delete id="deleteCardArea" parameterType="CardMall">
+		delete from t_card_area where cardid = #{cardid} and areaid = #{areaid}
+	</delete>
+	
+	<select id="selectCardGoods" resultType="Goods">
+		select
+			CASE WHEN (select MIN(t.marketprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.marketprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.marketprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.marketprice),'-',max(t.marketprice)) from t_product t where t.goodsid = g.goodsid) END marketprice,
+			CASE WHEN (select MIN(t.saleprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.saleprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.saleprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.saleprice),'-',max(t.saleprice)) from t_product t where t.goodsid = g.goodsid) END saleprice,
+			(select sum(t.stock) from t_product t where t.goodsid = g.goodsid) stock,
+			CASE WHEN (select MIN(t.settleprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.settleprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.settleprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.settleprice),'-',max(t.settleprice)) from t_product t where t.goodsid = g.goodsid) END settleprice,
+			CASE WHEN (select MIN(t.activeprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.activeprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.activeprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.activeprice),'-',max(t.activeprice)) from t_product t where t.goodsid = g.goodsid) END activeprice,
+			IFNULL((select t.brandname from t_brand t where t.brandcode = g.brandCode),'') brandname,
+			(select t.catename from t_goods_category t where t.id = g.cateCode)cateName,
+			(select t.catename from t_goods_category t where t.id = g.subcateCode)subcateName,
+			(select point from t_agent_point t where t.pointId = g.pointid) point,
+			(select t.agentname from t_agent t where t.id = g.agentid)agentname, 
+			g.* 
+		from t_card_goods a LEFT JOIN t_goods g ON a.goodsid=g.goodsid
+	     	where a.cardid=#{cardid} and g.status =5
+	      	limit #{start},#{rows}
+	</select>
+	
+	<select id="selectCardGoodsCount" resultType="int">
+	    select count(1) from t_card_goods a LEFT JOIN t_goods g ON a.goodsid=g.goodsid
+	     	where a.cardid=#{cardid} and g.status =5
+	</select>
+	
+	<select id="selectCardArea" resultType="AreaActive">
+		select *
+		from t_card_area a LEFT JOIN t_area_active g ON a.areaid=g.id
+	     	where a.cardid=#{cardid}
+	      	limit #{start},#{rows}
+	</select>
+	
+	<select id="selectCardAreaCount" resultType="int">
+	   select count(1) from t_card_area a LEFT JOIN t_area_active g ON a.areaid=g.id
+	     	where a.cardid=#{cardid}
+	</select>
+	
+	<select id="selectGoods" resultType="Goods">
+	    select 
+			CASE WHEN (select MIN(t.marketprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.marketprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.marketprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.marketprice),'-',max(t.marketprice)) from t_product t where t.goodsid = g.goodsid) END marketprice,
+			CASE WHEN (select MIN(t.saleprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.saleprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.saleprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.saleprice),'-',max(t.saleprice)) from t_product t where t.goodsid = g.goodsid) END saleprice,
+			(select sum(t.stock) from t_product t where t.goodsid = g.goodsid) stock,
+			CASE WHEN (select MIN(t.settleprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.settleprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.settleprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.settleprice),'-',max(t.settleprice)) from t_product t where t.goodsid = g.goodsid) END settleprice,
+			CASE WHEN (select MIN(t.activeprice) from t_product t where t.goodsid = g.goodsid)=(select max(t.activeprice) from t_product t where t.goodsid = g.goodsid) THEN (select max(t.activeprice) from t_product t where t.goodsid = g.goodsid) ELSE (select CONCAT(MIN(t.activeprice),'-',max(t.activeprice)) from t_product t where t.goodsid = g.goodsid) END activeprice,
+			IFNULL((select t.brandname from t_brand t where t.brandcode = g.brandCode),'') brandname,
+			(select t.catename from t_goods_category t where t.id = g.cateCode)cateName,
+			(select t.catename from t_goods_category t where t.id = g.subcateCode)subcateName,
+			(select point from t_agent_point t where t.pointId = g.pointid) point,
+			(select t.agentname from t_agent t where t.id = g.agentid)agentname,
+			g.*
+		 from t_goods g 
+		 where g.goodsid not in (select a.goodsid from t_card_goods a where a.cardid = #{cardid}) and g.`status` in (5,6) limit #{start},#{rows}
+	</select>
+	
+	<select id="selectGoodsCount" resultType="int">
+	    select count(1) from t_goods t where t.goodsid not in (select a.goodsid from t_card_goods a where a.cardid = #{cardid}) and t.`status` in (5,6)
+	</select>
+	
+	<select id="selectArea" resultType="AreaActive">
+	    select * from t_area_active t where t.id not in (select a.areaid from t_card_area a where a.cardid = #{cardid}) limit #{start},#{rows}
+	</select>
+	
+	<select id="selectAreaCount" resultType="int">
+	    select count(1) from t_area_active t where t.id not in (select a.areaid from t_card_area a where a.cardid = #{cardid})
+	</select>
+
+</mapper>

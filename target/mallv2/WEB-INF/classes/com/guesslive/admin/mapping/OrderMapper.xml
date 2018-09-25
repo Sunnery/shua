@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.guesslive.admin.dao.OrderMapper">
+
+	<resultMap type="Order" id="OrderResultMap">
+		<id property="id" column="id" />
+		<result property="orderno" column="orderno" />
+		<result property="orderstatus" column="orderstatus" />
+		<result property="paytype" column="paytype" />
+		<result property="paymoney" column="paymoney" />
+		<result property="aid" column="aid" />
+		<result property="createtime" column="createtime" />
+		<result property="name" column="name" />
+		<result property="phone" column="phone" />
+		<result property="bill" column="bill" />
+		<result property="remark" column="remark" />
+		<result property="paytime" column="paytime" />
+		<result property="payno" column="payno" />
+		<result property="delivertime" column="delivertime" />
+		<result property="finishtime" column="finishtime" />
+		<result property="closetime" column="closetime" />
+		<result property="counts" column="counts" />
+		<result property="agentid" column="agentid" />
+		<result property="platform" column="platform" />
+		<result property="marklevel" column="marklevel" />
+		<collection property="orderGoods" ofType="OrderGoods">
+			<result property="orderid" column="orderid" />
+			<result property="goodsid" column="goodsid" />
+			<result property="num" column="num" />
+			<result property="price" column="price" />
+			<result property="activitytype" column="activitytype" />
+			<result property="goodsname" column="goodsname" />
+			<result property="iconurl" column="iconurl" />
+			<result property="specs" column="specs" />
+			<result property="redPrice" column="redPrice" />
+			<result property="points" column="points" />
+		</collection>
+		<collection property="orderMark" ofType="OrderMark">
+			<id property="orderid" column="orderid" />
+			<result property="ordermarkid" column="ordermarkid" />
+			<result property="content" column="content" />
+			<result property="level" column="level" />
+			<result property="person" column="person" />
+			<result property="updatetime" column="updatetime" />
+		</collection>
+	</resultMap>
+	
+	<!-- 查询未删除订单 -->
+	<select id="selectAllOrder" resultMap="OrderResultMap">
+		SELECT 
+			c.goodsid,
+			c.NAME goodsname,
+			c.iconurl,
+			c.num,
+			c.price,
+			c.specs,
+			c.activitytype,
+			c.redPrice,
+			c.points,
+			a.*,
+			m.`level` marklevel
+			FROM
+			t_order a LEFT JOIN t_order_mark m ON a.id = m.orderid 
+			AND m.id IN(SELECT MAX(id) FROM t_order_mark GROUP BY orderid) 
+			LEFT JOIN t_order_goods c ON a.`id` = c.`orderid`		 
+			WHERE
+			a.isdelete=0 and a.id not in(SELECT orderid FROM t_refund_return WHERE status not in(0, 2, 6) )
+		<if test="order.orderno != null and order.orderno != ''">
+			and a.orderno like concat('%',#{order.orderno},'%')
+		</if>
+		<if test="order.phone != null and order.phone != ''">
+			and a.phone like concat('%',#{order.phone},'%')
+		</if>
+		<if test="order.paytype != null and order.paytype != ''">
+			and a.paytype = #{order.paytype}
+		</if>
+		<!-- 订单状态为5的为已支付（包括1.2.3.4） -->
+		<if test="order.orderstatus != null and order.orderstatus != 5">
+			and a.orderstatus = #{order.orderstatus}
+		</if>
+		<if test="order.orderstatus != null and order.orderstatus == 5">
+			and a.orderstatus &gt;= 1
+		</if>
+		<if test="order.goodsname != null and order.goodsname != ''">
+			and c.name LIKE concat('%',#{order.goodsname},'%')
+		</if>
+		<if test="order.begindate != null and order.begindate != ''">
+			and createtime &gt;= #{order.begindate}
+		</if>
+		<if test="order.enddate != null and order.begindate != ''">
+			and createtime &lt;= #{order.enddate}
+		</if>
+		<if test="order.platform != null and order.platform != '' ">
+			and a.platform = #{order.platform}
+		</if>
+		<if test="order.agentid != null and order.agentid != ''">
+			and a.agentid  = #{order.agentid}
+		</if>
+		<if test="order.name != null and order.name != ''">
+			and a.name LIKE concat('%',#{order.name},'%')
+		</if>
+			order by a.createtime DESC
+			limit #{start},#{rows}
+	</select>
+	
+	<!-- 查询未删除订单总数 -->
+	<select id="selectAllCount" resultType="int">
+		SELECT count(*)
+			FROM
+			t_order a LEFT JOIN t_order_mark m ON a.id = m.orderid 
+			AND m.id IN(SELECT MAX(id) FROM t_order_mark GROUP BY orderid) 
+			LEFT JOIN t_order_goods c ON a.`id` = c.`orderid`		 
+			WHERE
+			a.isdelete=0 and a.id not in(SELECT orderid FROM t_refund_return WHERE status not in(0, 2, 6) )
+		<if test="orderno != null and orderno != ''">
+			and a.orderno like concat('%',#{orderno},'%')
+		</if>
+		<if test="phone != null and phone != ''">
+			and a.phone like concat('%',#{phone},'%')
+		</if>
+		<if test="paytype != null and paytype != ''">
+			and a.paytype = #{paytype}
+		</if>
+		<!-- 订单状态为5的为已支付 （包括1.2.3.4） -->
+		<if test="orderstatus != null and orderstatus != 5">
+			and a.orderstatus = #{orderstatus}
+		</if>
+		<if test="orderstatus != null and orderstatus == 5">
+			and a.orderstatus &gt;= 1
+		</if>
+		<if test="goodsname != null and goodsname != ''">
+			and c.name LIKE concat('%',#{goodsname},'%')
+		</if>
+		<if test="begindate != null and begindate != ''">
+			and a.createtime &gt;= #{begindate}
+		</if>
+		<if test="enddate != null and begindate != ''">
+			and a.createtime &lt;= #{enddate}
+		</if>
+		<if test="platform != null and platform != '' ">
+			and a.platform = #{platform}
+		</if>
+		<if test="agentid != null and agentid != ''">
+			and a.agentid  = #{agentid}
+		</if>
+		<if test="name != null and name != '' ">
+			and a.name = #{name}
+		</if>
+	</select>
+	
+	<!-- 查询订单详情中的订单信息 -->
+	<select id="selectOrderGoodsById" resultMap="OrderResultMap">
+		SELECT a.*,
+		c.name goodsname,
+		c.iconurl,
+		c.num,
+		c.price,
+		c.specs,
+		c.redPrice,
+		c.points,
+		(SELECT COUNT(1) FROM t_settle_order WHERE orderid = a.id) counts
+		FROM t_order a LEFT JOIN t_order_mark m ON a.id = m.orderid 
+			AND m.id IN(SELECT MAX(id) FROM t_order_mark GROUP BY orderid) 
+			LEFT JOIN t_order_goods c ON a.`id` = c.`orderid`
+		where a.isdelete=0 AND a.id=#{id}
+	</select>
+
+
+	<!-- 查询订单详情中的物流信息 -->
+	<select id="selectKuaidiInfo" resultType="KuaidiInfo">
+		SELECT
+		a.name,a.phone,a.prov,a.city,a.address,a.orderstatus,c.nu,c.com,c.state,c.ischeck,c.data,c.updatetime
+		,kc.comname FROM t_order a LEFT
+		JOIN t_order_kuaidi b ON
+		a.id=b.orderid
+		LEFT JOIN t_kuaidi_info c ON b.nu=c.nu and b.com=c.com  LEFT JOIN
+		t_kuaidi_company kc ON
+		b.com=kc.comcode
+		WHERE a.id=#{id} and b.type=#{type}
+	</select>
+
+	<!-- 查询订单详情中的客户信息 -->
+	<select id="selectAccountInfo" resultType="Account">
+		SELECT
+		a.account,a.phone,a.weiboid,a.qqid,a.wechatid,a.nickname,a.sex,a.birthday,a.icon,a.points
+		FROM t_order o LEFT JOIN t_account a ON o.aid=a.aid WHERE o.id=#{id}
+	</select>
+	
+	<select id="queryOrderMark" resultType="OrderMark">
+		select * from t_order_mark where orderid=#{orderid}
+	</select>
+	
+	<!-- 新增订单备注信息 -->
+	<insert id="insertOrderMark" parameterType="OrderMark" useGeneratedKeys="true" keyProperty="id">
+       	INSERT INTO t_order_mark 
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="content != null">
+				content,
+			</if>
+			<if test="level != null">
+				level,
+			</if>
+			<if test="orderid != null">
+				orderid,
+			</if>
+			<if test="person != null">
+				person,
+			</if>
+			<if test="updatetime != null">
+				updatetime
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="content != null">
+				#{content},
+			</if>
+			<if test="level != null">
+				#{level},
+			</if>
+			<if test="orderid != null">
+				#{orderid},
+			</if>
+			<if test="person != null">
+				#{person},
+			</if>
+			<if test="updatetime != null">
+				#{updatetime}
+			</if>
+		</trim>
+     </insert>
+	
+	
+	<!-- 修改物流信息中的收货信息 -->
+	<update id="updateAccountById" parameterType="Order">
+		update t_order
+		<set>
+			<if test="name != null">
+				name = #{name},
+			</if>
+			<if test="phone != null">
+				phone = #{phone},
+			</if>
+			<if test="prov != null">
+				prov = #{prov},
+			</if>
+			<if test="city != null">
+				city = #{city},
+			</if>
+			<if test="address != null">
+				address = #{address},
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+	
+	<!-- 修改物流信息中的物流信息 -->
+	<update id="updateExpressById" parameterType="KuaidiInfo">
+		UPDATE t_order_kuaidi a ,t_order b
+		<set>
+			<if test="com != null and com != ''">
+				a.com = #{com},
+			</if>
+			<if test="nu != null and nu != ''">
+				a.nu = #{nu},
+			</if>
+			b.ispostkuaidi = 0
+		</set>
+		WHERE a.orderid = #{id} AND a.type = 1 AND a.orderid = b.id
+	</update>
+	
+	<!-- 查询所有快递公司 -->
+	<select id="selectKuaidiCom" resultType="KuaidiInfo">
+		SELECT comcode,comname , comicon FROM t_kuaidi_company
+			WHERE `status`= 1 order by weight desc
+	</select>
+	
+	<!-- 快递单号唯一性验证 -->
+	<select id="selectKuaiByNu" resultType="int">
+		SELECT count(*) FROM t_order_kuaidi WHERE com=#{com} AND nu=#{nu} AND orderid=#{orderid}
+	</select>
+	
+	<!-- 供应商发货，添加物流信息 -->
+	<insert id="insertOrderKudiDi" useGeneratedKeys="true" keyProperty="id">
+		insert into t_order_kuaidi (orderid,com,nu) values
+		(#{orderid},#{com},#{nu})
+	</insert>
+	
+	<!-- 发货修改订单状态 -->
+	<update id="updateOrderstatus" parameterType="Order">
+		update t_order set
+		orderstatus=#{orderstatus},delivertime=#{delivertime} where id=#{id}
+	</update>
+	
+	<!-- 订单导出 -->
+	<select id="selectToExportOrder" resultType="ExportOrder">
+		SELECT t.orderno,t.createtime,t.orderstatus,t.paytype,
+			t.paytime,t.paymoney,t.name,t.phone,t.prov,t.city,t.address,t.bill,
+			t1.`name` goodsname,t1.specs,t1.activitytype,t1.redPrice,t1.points,
+			t1.price,t1.num,t1.orderid ,t3.brandname , t4.content ,t2.goodssn ,t4.level
+		FROM t_order t LEFT JOIN t_order_goods t1 ON  t.id = t1.orderid
+					 LEFT JOIN t_goods t2 ON t1.goodsid=t2.goodsid
+					 LEFT JOIN t_brand t3 ON t2.brandCode=t3.id
+					 LEFT JOIN t_order_mark t4 ON t.id=t4.orderid
+					 AND t4.id IN(SELECT MAX(id) FROM t_order_mark GROUP BY orderid)
+		where  t.isdelete=0 and t.id not in(SELECT orderid FROM t_refund_return WHERE status not in(0, 2, 6))
+		<if test="orderno != null and orderno != ''">
+			and t.orderno like concat('%',#{orderno},'%')
+		</if>
+		<if test="phone != null and phone != ''">
+			and t.phone like concat('%',#{phone},'%')
+		</if>
+		<if test="paytype != null and paytype != ''">
+			and t.paytype = #{paytype}
+		</if>
+		<!-- 订单状态为5的为已支付 （包括1.2.3.4） -->
+		<if test="orderstatus != null and orderstatus != 5">
+			and t.orderstatus = #{orderstatus}
+		</if>
+		<if test="orderstatus != null and orderstatus == 5">
+			and t.orderstatus &gt;= 1
+		</if>
+		<if test="goodsname != null and goodsname != ''">
+			and t1.name LIKE concat('%',#{goodsname},'%')
+		</if>
+		<if test="begindate != null and begindate != ''">
+			and t.createtime &gt;= #{begindate}
+		</if>
+		<if test="enddate != null and begindate != ''">
+			and t.createtime &lt;= #{enddate}
+		</if>
+		<if test="platform != null and platform != '' ">
+			and t.platform = #{platform}
+		</if>
+		<if test="agentid != null and agentid != ''">
+			and t.agentid  = #{agentid}
+		</if>
+		<if test="name != null and name != '' ">
+			and t.name = #{name}
+		</if>
+		order by t.createtime DESC
+	</select>
+
+</mapper>
+

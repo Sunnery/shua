@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.AccountMapper">
+     
+     <select id="searchAccountCount" resultType="int">
+		select COUNT(*) from t_account
+     </select>
+     
+     <select id="searchAccountList" resultType="Account">
+		select aid,account,phone,nickname,sex,birthday,icon,createtime,regplatform from t_account order by createtime DESC limit #{start},#{rows}
+     </select>
+          
+</mapper>

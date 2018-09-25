@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.KuaidiComMapper">
+     
+     <select id="searchKuaidiComCount" resultType="int">
+		SELECT
+			count(1)
+		FROM
+			t_kuaidi_company a
+ 		where 1=1 
+		<if test="comname !=null and comname !='' ">
+			and a.comname like concat('%',#{comname},'%')
+		</if>
+		<if test="status !=null and status !='' ">
+			and a.status = #{status}
+		</if>
+     </select>
+
+	<select id="getKuaidiComList" parameterType="KuaidiCom" resultType="KuaidiCom">
+		SELECT
+			*
+		FROM
+			t_kuaidi_company a
+ 		where 1=1 
+		<if test="kuaidiCom.comname !=null and kuaidiCom.comname !='' ">
+			and a.comname like concat('%',#{kuaidiCom.comname},'%')
+		</if>
+		<if test="kuaidiCom.status !=null and kuaidiCom.status !='' ">
+			and a.status = #{kuaidiCom.status}
+		</if>
+		order by weight desc
+		limit #{start},#{rows}
+	</select>
+     
+     <insert id="insertKuaidiCom" parameterType="KuaidiCom" useGeneratedKeys="true" keyProperty="comid">
+     	INSERT INTO t_kuaidi_company (comname,comicon,comcode,weight,status) VALUES (#{comname},#{comicon},#{comcode},#{weight},#{status})
+     </insert>
+     
+     <update id="updateKuaidiComStatus" parameterType="KuaidiCom">
+     	UPDATE t_kuaidi_company
+     	<set>
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="weight != null">
+				weight = #{weight}
+			</if>
+		</set>
+     	 WHERE comid = #{comid}
+     </update>
+          
+</mapper>

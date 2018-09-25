@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.SpecValueMapper">
+
+    <select id="searchValueById" resultType="SpecValue">
+       select id vid, specid,value from t_spec_value where specid=#{specid}
+    </select>
+    
+    <select id="searchTotal" resultType="int">
+       select count(*) from t_spec_value where specid=#{specid}
+    </select>
+    
+    <update id="updateById" parameterType="SpecValue">
+       update t_spec_value set value=#{value} where id=#{vid} 
+    </update>
+    <insert id="addValue" useGeneratedKeys="true" keyProperty="id">
+       insert into t_spec_value (specid,value) values (#{specid},#{value})
+    </insert>
+    
+    <delete id="deleteById" parameterType="Spec">
+       delete  from t_spec_value where id=#{vid}
+    </delete>
+</mapper>

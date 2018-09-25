@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.guesslive.admin.dao.SpecMapper">
+     
+     <delete id="deleteSpec" parameterType="Spec">
+        delete from t_spec where id=#{id}
+     </delete>
+     <delete id="deleteCate" parameterType="Spec">
+        delete from t_category_spec where sid=#{sid}
+     </delete>
+     
+     <!-- 添加分类规格值 -->
+     <insert id="insertCateSpec" parameterType="SpecCate">
+     	<foreach collection="list" item="item" separator=";">
+        	INSERT INTO t_category_spec (gcid,sid) VALUES (#{item.gcid},#{item.sid})
+        </foreach> 
+     </insert>
+     
+     
+     <!-- 添加规格前检测规格名称唯一性 -->
+     <select id="searchSpecCateByName" resultType="int">
+		SELECT count(*) from
+			 t_goods_category t ,t_spec t2, t_category_spec t3 
+         <where>
+         	t.id = t3.gcid and t2.id = t3.sid
+ 	  		<if test="gcid != null">
+	  	 		and t3.gcid = #{gcid}
+	  		</if>
+			<if test="name!= null">
+				and t2.name= #{name}
+			</if>
+		 </where> 
+     </select>
+     
+     <select id="searchSpecCounts" resultType="int">
+		SELECT COUNT(*) from t_spec 
+     </select>
+     
+     <!--查询规格 只对单表查询 t_spec  -->
+     <select id="searchSpecList" resultType="Spec">
+     	SELECT id,agentid,name,isdefault from t_spec limit #{start},#{rows}
+     </select>
+     
+     <insert id="insertSpecs"  useGeneratedKeys="true" keyProperty="id">
+     	INSERT INTO t_spec (name) VALUES (#{name})
+     </insert>
+</mapper>

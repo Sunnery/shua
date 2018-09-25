@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.guesslive.admin.dao.DepartmentMapper">
+
+	<select id="getDepartmentList" resultType="Department">
+		SELECT t1.id,t1.name,t1.createtime,t1.agentid,t2.agentname FROM t_department t1 
+			LEFT JOIN t_agent t2 ON t2.id = t1.agentid WHERE t1.agentid = #{department.agentid}
+			 ORDER BY createtime desc
+	</select>
+	
+	<select id="getDepartmentCount" resultType="int">
+		SELECT COUNT(*) FROM t_department t1 
+			LEFT JOIN t_agent t2 ON t2.id = t1.agentid WHERE t1.agentid = #{department.agentid}
+	</select>
+	
+	<insert id="insertDepartment" parameterType="Department" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO t_department (name,createtime,agentid) VALUES (#{name},now(),#{agentid})
+	</insert>
+	
+	<delete id="deleteDepartment">
+		DELETE FROM t_department WHERE id = #{id}
+	</delete>
+	
+</mapper>
